@@ -1,7 +1,10 @@
 import { isArray } from '@vue/shared'
+import { ComputedRefImpl } from './computed'
 import { Dep, createDep } from './dep'
 
 type KeyToDepMap = Map<any, Dep>
+
+export type EffectScheduler = (...args: any[]) => any
 
 /**
  * 单例，当前的 effect
@@ -21,7 +24,15 @@ const targetMap = new WeakMap<any, KeyToDepMap>()
  * 响应性触发依赖时的执行类
  */
 export class ReactiveEffect<T = any> {
-	constructor(public fn: () => T) { }
+	/**
+	 * 存在该属性，则表示当前的 effect 为计算属性的 effect
+	 */
+	computed?: ComputedRefImpl<T>
+
+	constructor(
+		public fn: () => T,
+		public scheduler: EffectScheduler | null = null
+	) {}
 
 	run() {
 		// 为 activeEffect 赋值
@@ -120,5 +131,12 @@ export function triggerEffects(dep: Dep) {
  * 触发指定的依赖
  */
 export function triggerEffect(effect: ReactiveEffect) {
-	effect.run()
+	// 存在调度器就执行调度函数
+  if (effect.scheduler) {
+    effect.scheduler()
+  } 
+  // 否则直接执行 run 函数即可
+  else {
+    effect.run()
+  }
 }
