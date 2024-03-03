@@ -4,6 +4,12 @@ import { Dep, createDep } from './dep'
 
 type KeyToDepMap = Map<any, Dep>
 
+
+export interface ReactiveEffectOptions {
+	lazy?: boolean
+	scheduler?: EffectScheduler
+}
+
 export type EffectScheduler = (...args: any[]) => any
 
 /**
@@ -48,11 +54,14 @@ export class ReactiveEffect<T = any> {
  * @param fn 执行方法
  * @returns 以 ReactiveEffect 实例为 this 的执行函数
  */
-export function effect<T = any>(fn: () => T) {
+export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
 	// 生成 ReactiveEffect 实例
 	const _effect = new ReactiveEffect(fn)
-	// 执行 run 函数
-	_effect.run()
+  // !options.lazy 时
+	if (!options || !options.lazy) {
+		// 执行 run 函数
+		_effect.run()
+	}
 }
 
 
