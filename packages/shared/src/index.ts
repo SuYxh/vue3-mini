@@ -21,3 +21,9 @@ export const hasChanged = (value: any, oldValue: any): boolean =>
 */
 export const isFunction = (val: unknown): val is Function =>
   typeof val === 'function'
+
+
+/**
+* Object.assign
+*/
+export const extend = Object.assign

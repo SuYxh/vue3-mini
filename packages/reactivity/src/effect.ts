@@ -1,4 +1,4 @@
-import { isArray } from '@vue/shared'
+import { isArray, extend } from '@vue/shared'
 import { ComputedRefImpl } from './computed'
 import { Dep, createDep } from './dep'
 
@@ -38,7 +38,7 @@ export class ReactiveEffect<T = any> {
 	constructor(
 		public fn: () => T,
 		public scheduler: EffectScheduler | null = null
-	) {}
+	) { }
 
 	run() {
 		// 为 activeEffect 赋值
@@ -57,7 +57,13 @@ export class ReactiveEffect<T = any> {
 export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
 	// 生成 ReactiveEffect 实例
 	const _effect = new ReactiveEffect(fn)
-  // !options.lazy 时
+
+	// 存在 options，则合并配置对象
+	if (options) {
+		extend(_effect, options)
+	}
+
+	// !options.lazy 时
 	if (!options || !options.lazy) {
 		// 执行 run 函数
 		_effect.run()
@@ -71,22 +77,22 @@ export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
  * @param key 代理对象的 key，当依赖被触发时，需要根据该 key 获取
  */
 export function track(target: object, key: unknown) {
-  // 如果当前不存在执行函数，则直接 return
-  if (!activeEffect) return
-  // 尝试从 targetMap 中，根据 target 获取 map
-  let depsMap = targetMap.get(target)
-  // 如果获取到的 map 不存在，则生成新的 map 对象，并把该对象赋值给对应的 value
-  if (!depsMap) {
-    targetMap.set(target, (depsMap = new Map()))
-  }
-  // 获取指定 key 的 dep
-  let dep = depsMap.get(key)
-  // 如果 dep 不存在，则生成一个新的 dep，并放入到 depsMap 中
-  if (!dep) {
-    depsMap.set(key, (dep = createDep()))
-  }
+	// 如果当前不存在执行函数，则直接 return
+	if (!activeEffect) return
+	// 尝试从 targetMap 中，根据 target 获取 map
+	let depsMap = targetMap.get(target)
+	// 如果获取到的 map 不存在，则生成新的 map 对象，并把该对象赋值给对应的 value
+	if (!depsMap) {
+		targetMap.set(target, (depsMap = new Map()))
+	}
+	// 获取指定 key 的 dep
+	let dep = depsMap.get(key)
+	// 如果 dep 不存在，则生成一个新的 dep，并放入到 depsMap 中
+	if (!dep) {
+		depsMap.set(key, (dep = createDep()))
+	}
 
-  trackEffects(dep)
+	trackEffects(dep)
 }
 
 /**
@@ -128,23 +134,23 @@ export function trigger(
  * 依次触发 dep 中保存的依赖
  */
 export function triggerEffects(dep: Dep) {
-		// 把 dep 构建为一个数组
-		const effects = isArray(dep) ? dep : [...dep]
-		// 依次触发
-		// for (const effect of effects) {
-		// 	triggerEffect(effect)
-		// }
-		// 不在依次触发，而是先触发所有的计算属性依赖，再触发所有的非计算属性依赖
-		for (const effect of effects) {
-			if (effect.computed) {
-				triggerEffect(effect)
-			}
+	// 把 dep 构建为一个数组
+	const effects = isArray(dep) ? dep : [...dep]
+	// 依次触发
+	// for (const effect of effects) {
+	// 	triggerEffect(effect)
+	// }
+	// 不在依次触发，而是先触发所有的计算属性依赖，再触发所有的非计算属性依赖
+	for (const effect of effects) {
+		if (effect.computed) {
+			triggerEffect(effect)
 		}
-		for (const effect of effects) {
-			if (!effect.computed) {
-				triggerEffect(effect)
-			}
+	}
+	for (const effect of effects) {
+		if (!effect.computed) {
+			triggerEffect(effect)
 		}
+	}
 }
 
 /**
@@ -152,11 +158,11 @@ export function triggerEffects(dep: Dep) {
  */
 export function triggerEffect(effect: ReactiveEffect) {
 	// 存在调度器就执行调度函数
-  if (effect.scheduler) {
-    effect.scheduler()
-  } 
-  // 否则直接执行 run 函数即可
-  else {
-    effect.run()
-  }
+	if (effect.scheduler) {
+		effect.scheduler()
+	}
+	// 否则直接执行 run 函数即可
+	else {
+		effect.run()
+	}
 }
